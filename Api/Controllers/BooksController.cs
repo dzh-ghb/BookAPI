@@ -18,6 +18,13 @@ namespace Api.Controllers
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] BookCreateDto bookDto)
         {
+            var authorFromDb = await dbContext.Authors.FirstOrDefaultAsync(i => i.Id == bookDto.AuthorId);
+
+            if (authorFromDb == null)
+            {
+                return BadRequest("Автор не найден");
+            }
+
             Book book = new Book
             {
                 Title = bookDto.Title,

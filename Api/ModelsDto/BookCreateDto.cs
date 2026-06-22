@@ -1,11 +1,9 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace Api.Models
+namespace Api.ModelsDto
 {
-    public class Book
+    public class BookCreateDto
     {
-        [Key]
-        public int Id { get; set; }
         [Required]
         public string Title { get; set; }
         [Range(1, 10_000)]
@@ -13,6 +11,5 @@ namespace Api.Models
         [Range(1, 100_000)]
         public int Pages { get; set; }
         public int AuthorId { get; set; }
-        public Author Author { get; set; } = null; // навигационное свойство (EF Core автоматом назначит внешний ключ)
     }
 }

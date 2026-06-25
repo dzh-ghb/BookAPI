@@ -1,48 +1,36 @@
-using Api.Data;
-using Api.Models;
 using Api.ModelsDto;
+using Api.Services;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace Api.Controllers
 {
     public class AuthorsController : BaseController
     {
-        private readonly AppDbContext dbContext;
+        private readonly IAuthorsService service;
 
-        public AuthorsController(AppDbContext dbContext) : base(dbContext)
+        public AuthorsController(IAuthorsService service)
         {
-            this.dbContext = dbContext;
+            this.service = service;
         }
 
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] AuthorCreateDto authorDto)
         {
-            Author author = new Author { Name = authorDto.Name };
-
-            dbContext.Authors.Add(author);
-            await dbContext.SaveChangesAsync();
-
-            return Ok(await GetById(author.Id));
+            return Ok(await service.AddAuthor(authorDto));
         }
 
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
-            return Ok(await dbContext.Authors.ToListAsync());
+            return Ok(await service.GetAllAuthors());
         }
 
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
         {
-            var authorFromDb = await dbContext.Authors.FirstOrDefaultAsync(i => i.Id == id);
+            var authorFromDb = await service.GetAuthorById(id);
 
-            if (authorFromDb == null)
-            {
-                return NotFound("Пользователь с таким ID не найден");
-            }
-
-            return Ok(authorFromDb);
+            return authorFromDb != null ? Ok(authorFromDb) : NotFound("Пользователь с таким ID не найден");
         }
     }
 }

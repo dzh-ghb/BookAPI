@@ -1,118 +1,64 @@
-using Api.Data;
-using Api.Models;
 using Api.ModelsDto;
+using Api.Services;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace Api.Controllers
 {
     public class BooksController : BaseController
     {
-        private readonly AppDbContext dbContext;
+        private readonly IBooksService service;
 
-        public BooksController(AppDbContext dbContext) : base(dbContext)
+        public BooksController(IBooksService service)
         {
-            this.dbContext = dbContext;
+            this.service = service;
         }
 
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] BookCreateDto bookDto)
         {
-            var authorFromDb = await dbContext.Authors.FirstOrDefaultAsync(i => i.Id == bookDto.AuthorId);
+            var book = await service.AddBook(bookDto);
 
-            if (authorFromDb == null)
-            {
-                return BadRequest("Автор не найден");
-            }
-
-            Book book = new Book
-            {
-                Title = bookDto.Title,
-                Year = bookDto.Year,
-                Pages = bookDto.Pages,
-                AuthorId = bookDto.AuthorId
-            };
-
-            dbContext.Books.Add(book);
-            await dbContext.SaveChangesAsync();
-
-            return Ok(await GetById(book.Id));
+            // await GetById(book.Id)
+            return book != null ? Ok(book) : BadRequest("Автор не найден");
         }
 
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
-            return Ok(await dbContext.Books.ToListAsync());
+            return Ok(await service.GetAllBooks());
         }
 
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
         {
-            var bookFromDb = await dbContext.Books.FirstOrDefaultAsync(i => i.Id == id);
+            var bookFromDb = await service.GetBookById(id);
 
-            if (bookFromDb == null)
-            {
-                return NotFound("Книги с таким ID не найдено");
-            }
-
-            return Ok(bookFromDb);
+            return bookFromDb != null ? Ok(bookFromDb) : NotFound("Книги с таким ID не найдено");
         }
 
         [HttpGet("{authorId}")]
         public async Task<IActionResult> GetByAuthorId(int authorId)
         {
-            var booksByAuthor = await dbContext.Books.Where(i => i.AuthorId == authorId).ToListAsync();
+            var booksByAuthor = await service.GetBooksByAuthorId(authorId);
 
-            if (booksByAuthor == null || booksByAuthor.Count == 0)
-            {
-                return NotFound("Книг указанного автора не найдено");
-            }
-
-            return Ok(booksByAuthor);
+            return (booksByAuthor != null && booksByAuthor.Count > 0) ? Ok(booksByAuthor) : NotFound("Книг указанного автора не найдено");
         }
 
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(int id, [FromBody] BookUpdateDto bookDto)
         {
-            var bookFromDb = await dbContext.Books.FirstOrDefaultAsync(i => i.Id == id);
+            var bookFromDb = await service.UpdateBook(id, bookDto);
 
-            if (bookFromDb == null)
-            {
-                return NotFound("Книги с таким ID не найдено");
-            }
-
-            if (!string.IsNullOrWhiteSpace(bookDto.Title))
-            {
-                bookFromDb.Title = bookDto.Title;
-            }
-            if (bookDto.Year > 0 && bookDto.Year < 3000)
-            {
-                bookFromDb.Year = bookDto.Year;
-            }
-            if (bookDto.Pages > 0 && bookDto.Pages < 99_999)
-            {
-                bookFromDb.Pages = bookDto.Pages;
-            }
-
-            await dbContext.SaveChangesAsync();
-
-            return Ok(await GetById(id));
+            return bookFromDb != null ? Ok(bookFromDb) : NotFound("Книги с таким ID не найдено");
+            // return Ok(await GetById(id));
         }
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
-            var bookFromDb = await dbContext.Books.FirstOrDefaultAsync(i => i.Id == id);
+            var bookFromDb = await service.DeleteBook(id);
 
-            if (bookFromDb == null)
-            {
-                return NotFound("Книги с таким ID не найдено");
-            }
-
-            dbContext.Books.Remove(bookFromDb);
-            await dbContext.SaveChangesAsync();
-
-            return NoContent();
+            return bookFromDb ? NoContent() : NotFound("Книги с таким ID не найдено");
         }
     }
 }

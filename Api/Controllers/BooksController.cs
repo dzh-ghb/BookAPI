@@ -36,7 +36,7 @@ namespace Api.Controllers
             return bookFromDb != null ? Ok(bookFromDb) : NotFound("Книги с таким ID не найдено");
         }
 
-        [HttpGet("{authorId}")]
+        [HttpGet("Author/{authorId}")]
         public async Task<IActionResult> GetByAuthorId(int authorId)
         {
             var booksByAuthor = await service.GetBooksByAuthorId(authorId);
